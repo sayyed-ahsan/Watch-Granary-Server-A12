@@ -135,6 +135,7 @@ async function run() {
             res.send(categories);
         })
         //-------------------------
+        // get categories wise products
         //-------------------------
         app.get('/categories/:cullection', async (req, res) => {
             const cullection = req.params.cullection;
