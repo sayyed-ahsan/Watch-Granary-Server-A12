@@ -136,6 +136,12 @@ async function run() {
         })
         //-------------------------
         //-------------------------
+        app.get('/categories/:cullection', async (req, res) => {
+            const cullection = req.params.cullection;
+            const query = { category: cullection }
+            const products = await productCullection.find(query).toArray();
+            res.send(products);
+        })
         //-------------------------
         //-------------------------
         //-------------------------
