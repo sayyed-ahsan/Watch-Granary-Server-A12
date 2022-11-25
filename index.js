@@ -43,11 +43,29 @@ function veryfyJWT(req, res, next) {
 //-------------------------
 async function run() {
     try {
+
+
+
+
+
+
         //-------------------------------------
         // all cullections in Watch-Granary DB
         //-------------------------------------
         const userCullection = client.db('Watch-Granary').collection('users');
         const productCullection = client.db('Watch-Granary').collection('products');
+        const categoriesCullection = client.db('Watch-Granary').collection('categories');
+        //-------------------------------------
+        // all cullections in Watch-Granary DB
+        //-------------------------------------
+
+
+
+
+
+
+
+
         //------------------------- 
         // save user in DB
         //-------------------------
@@ -74,8 +92,6 @@ async function run() {
                 return res.send({ accessToken: token });
             }
             res.status(403).send({ accessToken: '' })
-            // res.send(user);
-            // console.log(email, user)
         });
         //-------------------------
         // add product by seller
@@ -86,13 +102,40 @@ async function run() {
             res.send(result);
         });
         //-------------------------
+        // get all buyers to DB
         //-------------------------
+        app.get('/buyers', async (req, res) => {
+            const quary = { status: "buyer" }
+            const buyers = await userCullection.find(quary).toArray();
+            res.send(buyers);
+        });
         //-------------------------
+        // get all sellers to DB
         //-------------------------
+        app.get('/sellers', async (req, res) => {
+            const quary = { status: "seller" }
+            const sellers = await userCullection.find(quary).toArray();
+            res.send(sellers);
+        });
         //-------------------------
+        // seller products by email
         //-------------------------
+        app.get('/myProducts', async (req, res) => {
+            const email = req.query.email;
+            const query = { email }
+            const products = await productCullection.find(query).toArray();
+            res.send(products);
+            console.log(products)
+        })
         //-------------------------
+        // 
         //-------------------------
+        app.get('/categories', async (req, res) => {
+            const query = {}
+            const categories = await categoriesCullection.find(query).toArray();
+            res.send(categories);
+            console.log(categories)
+        })
         //-------------------------
         //-------------------------
         //-------------------------
