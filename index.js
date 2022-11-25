@@ -125,16 +125,14 @@ async function run() {
             const query = { email }
             const products = await productCullection.find(query).toArray();
             res.send(products);
-            console.log(products)
         })
         //-------------------------
-        // 
+        // get categories cullection
         //-------------------------
         app.get('/categories', async (req, res) => {
             const query = {}
             const categories = await categoriesCullection.find(query).toArray();
             res.send(categories);
-            console.log(categories)
         })
         //-------------------------
         //-------------------------
