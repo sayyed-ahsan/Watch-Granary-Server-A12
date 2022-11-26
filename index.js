@@ -144,15 +144,19 @@ async function run() {
             res.send(products);
         })
         //-------------------------
+        // set booked info: stoke, bayerEmail
         //-------------------------
         app.put('/categories/:id', async (req, res) => {
             const id = req.params.id;
+            const bayerEmail = req.query.email;
+            console.log(bayerEmail)
             console.log(id)
             const option = { upsert: true }
             const filter = { _id: ObjectId(id) }
             const updatDoc = {
                 $set: {
-                    stoke: "sold"
+                    stoke: "sold",
+                    buyerEmail: bayerEmail
                 }
             }
             const resust = await productCullection.updateOne(filter, updatDoc, option);
