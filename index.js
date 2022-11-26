@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken')
 require('dotenv').config();
 // const stripe = require("stripe")(process.env.STRIPE_ACCESS);
@@ -145,6 +145,20 @@ async function run() {
         })
         //-------------------------
         //-------------------------
+        app.put('/categories/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const option = { upsert: true }
+            const filter = { _id: ObjectId(id) }
+            const updatDoc = {
+                $set: {
+                    stoke: "sold"
+                }
+            }
+            const resust = await productCullection.updateOne(filter, updatDoc, option);
+            res.send(resust);
+
+        })
         //-------------------------
         //-------------------------
         //-------------------------
