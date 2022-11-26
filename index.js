@@ -16,8 +16,8 @@ app.use(express.json());
 
 //-------------------------
 //-------------------------
+// DB conection
 //-------------------------
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.6tylirv.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 //-------------------------
@@ -149,8 +149,6 @@ async function run() {
         app.put('/categories/:id', async (req, res) => {
             const id = req.params.id;
             const bayerEmail = req.query.email;
-            console.log(bayerEmail)
-            console.log(id)
             const option = { upsert: true }
             const filter = { _id: ObjectId(id) }
             const updatDoc = {
@@ -162,6 +160,22 @@ async function run() {
             const resust = await productCullection.updateOne(filter, updatDoc, option);
             res.send(resust);
 
+        })
+        //-------------------------
+        // report product by id
+        //-------------------------
+        app.put('categories/report/:id', async (req, res) => {
+            const id = req.params.id;
+            const option = { upsert: true }
+            const filter = { _id: ObjectId(id) }
+            const updatDoc = {
+                $set: {
+                    report: "reported",
+                }
+            }
+            const resust = await productCullection.updateOne(filter, updatDoc, option);
+            res.send(resust);
+            console.log('reeeeeeeeportttttt')
         })
         //-------------------------
         // get mybookings by axios
@@ -176,6 +190,7 @@ async function run() {
         })
         //-------------------------
         //-------------------------
+
         //-------------------------
         //-------------------------
         //-------------------------
