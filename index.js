@@ -25,7 +25,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 // jwt veryfication
 //-------------------------
 function veryfyJWT(req, res, next) {
-    const authHeader = req.headers.authuraization;
+    const authHeader = req?.headers?.authuraization;
     if (!authHeader) {
         return res.status(401).send('unauthorize access');
     }
@@ -60,6 +60,20 @@ async function run() {
         //-------------------------------------
         // all cullections in Watch-Granary DB
         //-------------------------------------
+
+
+
+
+        //-------------------------
+        //get current User
+        //-------------------------
+        app.get('/currectUser', async (req, res) => {
+            const email = req.query.email;
+            const quary = { email: email };
+            const currentUser = await userCullection.findOne(quary);
+            res.send(currentUser);
+        });
+
 
 
         //-------------------------
@@ -138,6 +152,7 @@ async function run() {
             const email = req.query.email;
             const quary = { email: email }
             const user = await userCullection.findOne(quary);
+            console.log(user)
             if (user) {
                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '3h' })
                 return res.send({ accessToken: token });
@@ -188,7 +203,7 @@ async function run() {
         //-------------------------
         // get categories wise products
         //-------------------------
-        app.get('/categories/:cullection', async (req, res) => {
+        app.get('/categories/:cullection', veryfyJWT, async (req, res) => {
             const cullection = req.params.cullection;
             const query = { category: cullection }
             const products = await productCullection.find(query).toArray();
@@ -323,9 +338,9 @@ async function run() {
             res.send(result);
         });
         // //-------------------------
-        // get mybookings by axios
+        // get mybookings by axios ------------------veryfyJWT
         //-------------------------
-        app.get('/mybookings', async (req, res) => {
+        app.get('/mybookings', veryfyJWT, async (req, res) => {
             const email = req.query.email;
             const query = { userEmail: email }
             const result = await userBookingCullection.find(query).toArray();
