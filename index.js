@@ -1,9 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const { parse } = require('dotenv');
 require('dotenv').config();
-// const stripe = require("stripe")(process.env.STRIPE_ACCESS);
+const stripe = require("stripe")(process.env.STRIPE_ACCESS);
 const port = process.env.PORT || 5000;
 
 const app = express();
@@ -53,17 +54,54 @@ async function run() {
         // all cullections in Watch-Granary DB
         //-------------------------------------
         const userCullection = client.db('Watch-Granary').collection('users');
-        const productCullection = client.db('Watch-Granary').collection('products');
         const categoriesCullection = client.db('Watch-Granary').collection('categories');
+        const productCullection = client.db('Watch-Granary').collection('products');
+        const userBookingCullection = client.db('Watch-Granary').collection('Userbooking');
         //-------------------------------------
         // all cullections in Watch-Granary DB
         //-------------------------------------
 
 
+        //-------------------------
+        //save payments in DB
+        //-------------------------
+        app.put('/payments', async (req, res) => {
+            const payment = req.body;
+            const id = payment.bookingId
+            // console.log(payment.email)
+            const filter = { _id: ObjectId(id) }
+            const option = { ussert: true }
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId,
+                    advertise: false
+                }
+            }
+            const updatedResult = await userBookingCullection.updateOne(filter, updatedDoc, option)
+            res.send(updatedResult);
+        })
+
+        //-------------------------
+        //change payment status from old cullection
+        //-------------------------
 
 
-
-
+        app.put('/paymentsOld/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const filter = { _id: ObjectId(id) }
+            const option = { ussert: true }
+            const updatedDocOld = {
+                $set: {
+                    stoke: "sold",
+                    advertise: false
+                }
+            }
+            const updatedResultOld = await productCullection.updateOne(filter, updatedDocOld, option)
+            res.send(updatedResultOld);
+            console.log("donsssssss--------ss", updatedResultOld)
+        })
 
 
         //------------------------- 
@@ -74,11 +112,24 @@ async function run() {
             const email = req.body.email;
             const query = { email }
             const olduser = await userCullection.findOne(query);
+
             if (olduser == null) {
                 const result = await userCullection.insertOne(userInfo);
                 res.send(result)
+                console.log(result);
+
             }
-            res.send(olduser)
+        });
+        //------------------------- 
+        // delete user from DB by id
+        //-------------------------
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            // console.log('trying to delete', id);
+            const query = { _id: ObjectId(id) }
+            const result = await userCullection.deleteOne(query);
+            console.log(result);
+            res.send(result);
         });
         //-------------------------
         // get jwt token
@@ -146,26 +197,40 @@ async function run() {
         //-------------------------
         // set booked info: stoke, bayerEmail
         //-------------------------
-        app.put('/categories/:id', async (req, res) => {
+        // app.put('/categories/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const bayerEmail = req.query.email;
+        //     const option = { upsert: true }
+        //     const filter = { _id: ObjectId(id) }
+        //     const updatDoc = {
+        //         $set: {
+        //             stoke: "sold",
+        //             paid: false,
+        //             buyerEmail: bayerEmail,
+        //         }
+        //     }
+        //     const resust = await productCullection.updateOne(filter, updatDoc, option);
+        //     res.send(resust);
+
+        // })
+        //-------------------------
+        // set booked info in new cullection
+        //-------------------------
+        app.post('/categories/:id', async (req, res) => {
             const id = req.params.id;
-            const bayerEmail = req.query.email;
-            const option = { upsert: true }
-            const filter = { _id: ObjectId(id) }
-            const updatDoc = {
-                $set: {
-                    stoke: "sold",
-                    buyerEmail: bayerEmail
-                }
-            }
-            const resust = await productCullection.updateOne(filter, updatDoc, option);
-            res.send(resust);
+
+            const bookingInfo = JSON.parse(req.headers.bookingproduct);
+            const result = await userBookingCullection.insertOne(bookingInfo);
+            res.send(result);
+            console.log(result)
 
         })
         //-------------------------
         // report product by id
         //-------------------------
-        app.put('categories/report/:id', async (req, res) => {
+        app.put('/product/report/:id', async (req, res) => {
             const id = req.params.id;
+            console.log('hitttttt', id)
             const option = { upsert: true }
             const filter = { _id: ObjectId(id) }
             const updatDoc = {
@@ -175,26 +240,128 @@ async function run() {
             }
             const resust = await productCullection.updateOne(filter, updatDoc, option);
             res.send(resust);
-            console.log('reeeeeeeeportttttt')
+            console.log(resust)
         })
         //-------------------------
+        // verify a seller by id
+        //-------------------------
+        app.put('/verifySeller/:id', async (req, res) => {
+            const id = req.params.id;
+            // console.log('hitttttt')
+            const option = { upsert: true }
+            const filter = { _id: ObjectId(id) }
+            const updatDoc = {
+                $set: {
+                    verify: true,
+                }
+            }
+            const resust = await userCullection.updateOne(filter, updatDoc, option);
+            res.send(resust);
+            // console.log(resust)
+        })
+        //-------------------------
+        // verify a Product by id
+        //-------------------------
+        app.put('/verifyProduct', async (req, res) => {
+            const sellerEmail = req.query.email;
+            // console.log('hitttttt', sellerEmail)
+            const option = { upsert: true }
+            const quary = { email: sellerEmail }
+            const uadateproduct = {
+                $set: {
+                    verify: true,
+                }
+            }
+            const resustproduct = await productCullection.updateMany(quary, uadateproduct, option);
+            res.send(resustproduct);
+            // console.log(resust)
+        })
+        //-------------------------
+        // Advertise Product by id
+        //-------------------------
+        app.put('/advertise/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log('hitttttt', id)
+            const option = { upsert: true }
+            const filter = { _id: ObjectId(id) }
+            const updatDoc = {
+                $set: {
+                    advertise: true,
+                }
+            }
+            const resust = await productCullection.updateOne(filter, updatDoc, option);
+            res.send(resust);
+            // console.log(resust)
+        })
+
+        //-------------------------
+        // Get Advertise Product from db
+        //-------------------------
+        app.get('/advertisedProduct', async (req, res) => {
+            const query = { advertise: true }
+            const categories = await productCullection.find(query).toArray();
+            res.send(categories);
+        })
+        //-------------------------
+        // get reported products
+        //-------------------------
+        app.get('/reportedProducts', async (req, res) => {
+            const query = { report: "reported" }
+            const result = await productCullection.find(query).toArray();
+            // res.send({ isAdmin: user?.role === 'admin' });
+            res.send(result)
+        })
+        //------------------------- 
+        // delete reported product from DB by id
+        //-------------------------
+        app.delete('/reportedProduct/:id', async (req, res) => {
+            const id = req.params.id;
+            // console.log('trying to delete', id);
+            const query = { _id: ObjectId(id) }
+            const result = await productCullection.deleteOne(query);
+            console.log(result);
+            res.send(result);
+        });
+        // //-------------------------
         // get mybookings by axios
         //-------------------------
         app.get('/mybookings', async (req, res) => {
             const email = req.query.email;
-            const query = { buyerEmail: email }
-            const result = await productCullection.find(query).toArray();
+            const query = { userEmail: email }
+            const result = await userBookingCullection.find(query).toArray();
             // res.send({ isAdmin: user?.role === 'admin' });
             res.send(result)
-            console.log(result)
         })
         //-------------------------
+        // to get product info in payment page
         //-------------------------
+        app.get('/payment/:productId', async (req, res) => {
+            const id = req.params.productId;
+            const quary = { _id: ObjectId(id) }
+            const result = await userBookingCullection.findOne(quary);
+            res.send(result);
+        });
+        //-------------------------
+        // stripe payment intent
+        //-------------------------
+        app.post('/create-payment-intent', async (req, res) => {
+            const booking = req.body;
+            // console.log(booking)
+            const price = parseFloat(booking.price);
+            const amount = price * 100;
+            // console.log(booking, price, amount)
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ]
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
 
-        //-------------------------
-        //-------------------------
-        //-------------------------
-        //-------------------------
         //-------------------------
         //-------------------------
         //-------------------------
